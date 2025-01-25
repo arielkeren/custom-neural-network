@@ -17,7 +17,6 @@ class Model:
         self.activations = []
         self.derivatives = []
         self.layers = []
-        self.error_history = []
 
     def add(self, layer):
         if len(self.layers) == 0:
@@ -90,16 +89,7 @@ class Model:
         print("Total biases:", total_biases)
         print("Total parameters:", total_weights + total_biases)
 
-        if len(self.error_history) > 0:
-            print("Loss:", self.error_history[-1])
-
         print("----------")
-
-        if len(self.error_history) > 0:
-            plt.figure()
-            plt.plot(self.error_history, label="Loss")
-            plt.legend()
-            plt.show()
 
     def evaluate(self, x, y):
         if (
@@ -180,12 +170,13 @@ class Model:
             x = activation(x @ weights + biases)
         return x
 
-    def fit(self, x, y, epochs, learning_rate, batch_size):
+    def fit(self, x, y, epochs, learning_rate, batch_size, validation_data=None):
         self.loss_derivative, self.derivatives[-1] = Losses.simplify(
             self.loss_name, self.layers[-1].activation
         )
 
-        error_history = []
+        loss_metric = []
+        val_loss_metric = []
         num_samples = y.shape[0]
 
         for _ in range(epochs):
@@ -228,9 +219,16 @@ class Model:
                     learning_rate * (changes[index].T @ a_results[index])
                 ).T
 
-            error_history.append(np.mean(self.loss(batch_y, output_a)))
+            loss_metric.append(np.mean(self.loss(batch_y, output_a)))
 
-        self.error_history = error_history
+            if validation_data:
+                val_loss_metric.append(
+                    np.mean(
+                        self.loss(validation_data[1], self.predict(validation_data[0]))
+                    )
+                )
+
+        return {"loss": loss_metric, "val_loss": val_loss_metric}
 
     def __add__(self, other):
         if isinstance(other, Input):
