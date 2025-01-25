@@ -156,6 +156,20 @@ class Model:
                 )
                 + "%",
             )
+        elif (
+            self.loss_name == "sparse_categorical_cross_entropy"
+            and self.layers[-1].activation == "softmax"
+        ):
+            print(
+                "Accuracy:",
+                str(
+                    round(
+                        100 * np.mean(np.argmax(self.predict(x), axis=1) == y),
+                        3,
+                    )
+                )
+                + "%",
+            )
         else:
             raise ValueError("Undefined evaluation for loss-activation combination")
 
