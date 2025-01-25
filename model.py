@@ -101,6 +101,64 @@ class Model:
             plt.legend()
             plt.show()
 
+    def evaluate(self, x, y):
+        if (
+            self.loss_name == "mean_squared_error"
+            and self.layers[-1].activation == "linear"
+        ):
+            prediction = self.predict(x)
+            print("Average combined error:", round(np.mean(abs(prediction - y)), 3))
+            for i in range(prediction.shape[1]):
+                print(
+                    f"Average error for class {i + 1}:",
+                    round(np.mean(abs(prediction[:, i] - y[:, i])), 3),
+                )
+        elif (
+            self.loss_name == "binary_cross_entropy"
+            and self.layers[-1].activation == "sigmoid"
+        ):
+            prediction = self.predict(x) >= 0.5
+            print(
+                "Combined accuracy:",
+                str(
+                    round(
+                        100 * np.mean(prediction == y),
+                        3,
+                    )
+                )
+                + "%",
+            )
+            for i in range(prediction.shape[1]):
+                print(
+                    f"Accuracy for class {i + 1}:",
+                    str(
+                        round(
+                            100 * np.mean(prediction[:, i] == y[:, i]),
+                            3,
+                        )
+                    )
+                    + "%",
+                )
+        elif (
+            self.loss_name == "categorical_cross_entropy"
+            and self.layers[-1].activation == "softmax"
+        ):
+            print(
+                "Accuracy:",
+                str(
+                    round(
+                        100
+                        * np.mean(
+                            np.argmax(self.predict(x), axis=1) == np.argmax(y, axis=1)
+                        ),
+                        3,
+                    )
+                )
+                + "%",
+            )
+        else:
+            raise ValueError("Undefined evaluation for loss-activation combination")
+
     def predict(self, x):
         for weights, biases, activation in zip(
             self.weights, self.biases, self.activations
