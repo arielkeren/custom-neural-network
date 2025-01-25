@@ -50,6 +50,11 @@ class CategoricalCrossEntropy(Loss):
         super().__init__("categorical_cross_entropy")
 
 
+class SparseCategoricalCrossEntropy(Loss):
+    def __init__(self):
+        super().__init__("sparse_categorical_cross_entropy")
+
+
 class Relu(Layer):
     def __init__(self, num_neurons, initialization="he"):
         super().__init__(num_neurons, "relu", initialization)

@@ -18,6 +18,11 @@ class Losses:
                     Losses.categorical_cross_entropy,
                     Losses.categorical_cross_entropy_derivative,
                 )
+            case "sparse_categorical_cross_entropy":
+                return (
+                    Losses.sparse_categorical_cross_entropy,
+                    Losses.sparse_categorical_cross_entropy_derivative,
+                )
             case _:
                 return Losses.mean_squared_error, Losses.mean_squared_error_derivative
 
@@ -31,6 +36,15 @@ class Losses:
 
         if loss == "categorical_cross_entropy" and output_activation == "softmax":
             return Losses.mean_squared_error_derivative, Activations.linear_derivative
+
+        if (
+            loss == "sparse_categorical_cross_entropy"
+            and output_activation == "softmax"
+        ):
+            return (
+                Losses.simplified_sparse_categorical_cross_entropy_with_softmax,
+                Activations.linear_derivative,
+            )
 
         return Losses.get(loss)[1], Activations.get(output_activation)[1]
 
@@ -62,3 +76,24 @@ class Losses:
     def categorical_cross_entropy_derivative(y_true, y_pred):
         y_pred = np.clip(y_pred, 1e-10, 1 - 1e-10)
         return -y_true / y_pred
+
+    @staticmethod
+    def sparse_categorical_cross_entropy(y_true, y_pred):
+        y_pred = np.clip(y_pred, 1e-10, 1 - 1e-10)
+        true_class_probs = y_pred[np.arange(len(y_true)), y_true]
+        return np.mean(-np.log(true_class_probs))
+
+    @staticmethod
+    def sparse_categorical_cross_entropy_derivative(y_true, y_pred):
+        y_pred = np.clip(y_pred, 1e-10, 1 - 1e-10)
+        grad = np.zeros_like(y_pred)
+        grad[np.arange(len(y_true)), y_true] = (
+            -1 / y_pred[np.arange(len(y_true)), y_true]
+        )
+        return grad / len(y_true)
+
+    @staticmethod
+    def simplified_sparse_categorical_cross_entropy_with_softmax(y_true, y_pred):
+        grad = y_pred.copy()
+        grad[np.arange(len(y_true)), y_true] -= 1
+        return grad / len(y_true)
